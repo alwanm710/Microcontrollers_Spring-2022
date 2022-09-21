@@ -2,7 +2,7 @@
 /*
   Barrier Detector
   xxxx
-  By: Gary and Colton
+  By: Gary, Mohammad, and Colton
   Written: March 21, 2022
   Edited: March 21, 2022
   I/O Pins
