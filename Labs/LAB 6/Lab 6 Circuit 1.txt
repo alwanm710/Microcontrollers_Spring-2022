@@ -1,0 +1,105 @@
+/*
+  Lab 6 Circuit 1
+  Timed interrupts for temperature sensor
+  By: Jack, Gary, Mohammad
+  Written: 2/23/22
+  I/O Pins
+  A0: TMP36 Vout
+  A1:
+  A2:
+  A3:
+  A4:
+  A5:
+  D0:
+  D1:
+  D2:
+  D3:
+  D4:
+  D5:
+  D6:
+  D7:
+  D8: RS line
+  D9: E line
+  D10: DB4
+  D11: DB5
+  D12: DB6
+  D13: DB7
+*/
+#include "hd44780.h"
+//Assign value of circular buffer
+const unsigned char n = 15;
+//declare circular buffer
+unsigned int arrayValues[n] = {};
+volatile unsigned int result = 0;
+
+//interrupt causes global variable to equal the new ADC value
+ISR(ADC_vect) {
+  result = ADC;
+}
+//Timed interrupt to set array values
+ISR(TIMER1_COMPA_vect)
+{
+  static unsigned long x = 0;
+  arrayValues[x % n] = result;
+  x++;
+}
+
+//external function adds up all values in circular buffer array and divides by the buffer size - returns average of array values
+unsigned int average(unsigned int *avgArr, unsigned char arrSize) {
+
+  unsigned int sum = 0;
+  for (unsigned char j = 0; j < arrSize; j++) {
+
+    sum += avgArr[j];
+  }
+  return sum / arrSize;
+}
+
+void setup() {
+  // put your setup code here, to run once:
+  //initialize ADC, LCD, and Timer interrupt
+  cli();
+
+  lcd_init();
+  ADCSRA = 0xEF;
+  ADCSRB = 0x00;
+  ADMUX = 0x40;
+
+  TCCR1A = 0x00;
+  TCCR1B = 0x0B;
+  TIMSK1 = 0x02;
+
+  OCR1A = 64999;
+
+  sei();
+}
+
+
+void loop() {
+  //get average value from circular buffer
+  unsigned int aver = average(arrayValues, n);
+  //convert ADC value to temperature
+  unsigned int Total = (((5000L * aver) / 1023) - 500);
+  //get integer value of temp
+  unsigned int tempTens = Total / 10;
+  //get decimal value of temp
+  unsigned int tempOnes = Total % 10;
+
+  //clear lcd
+  lcd_clrscr();
+  
+  //Display temperature value
+   lcd_puts("Temp Value: ");
+  lcd_goto(0x40);
+  char charButter[3];
+  char charButter2[3];
+  itoa(tempTens, charButter, 10);
+  lcd_puts(charButter);
+  lcd_puts(".");
+  itoa(tempOnes, charButter2, 10);
+  lcd_puts(charButter2);
+  lcd_putc(223);
+  lcd_puts("C");
+
+  _delay_ms(2);
+}

@@ -1,0 +1,56 @@
+/*
+  Lab 7 Circuit 1
+  Variable Intensity LED
+  By: Jon and Mohammad
+  Written: 3/16/22
+  I/O Pins
+  A0: Pot input
+  A1:
+  A2:
+  A3:
+  A4:
+  A5:
+  D0:
+  D1:
+  D2:
+  D3:
+  D4:
+  D5: LED output
+  D6:
+  D7:
+  D8:
+  D9:
+  D10: 
+  D11: 
+  D12: 
+  D13: 
+*/
+volatile unsigned int result = 0;
+
+
+// interrupt causes global variable to equal the new ADC value
+ISR(ADC_vect){
+  result = ADC;
+}
+
+void setup() {
+  cli(); // Disable Global interrupts 
+  DDRD = 0x20; // Make Pin D5 as output 
+  
+   //configure ADCSRA and ADCSRB to desired values
+  ADCSRA = 0xEF;
+  ADCSRB = 0x00;//technically not needed
+  //configure ADMUX to use A0 for Pot. input
+  ADMUX = 0x40;
+  //configure TCCR0A,TCCR0B, and OCR0A to desired values
+  // Prescaler = 64,TCNT0 is fast PWM, Frequency is 1 KHz, Top value is 249.
+  TCCR0A = 0x23;
+  TCCR0B = 0x0B;
+  OCR0A = 249;
+  sei(); // Enable Global interrupts 
+}
+
+void loop() {
+  // Equation for the OCR0B which changes the brightness of LED
+  OCR0B = 249L*result/1023;
+}

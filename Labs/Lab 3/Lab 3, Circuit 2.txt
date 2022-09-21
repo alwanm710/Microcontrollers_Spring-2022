@@ -1,0 +1,74 @@
+/*
+  Lab 3, Circuit 2
+  Display potentiometer results using LCD
+  By: Cesar & Mohammad
+  I/O Pins
+  A0: Potentiometer input
+  A1:
+  A2:
+  A3:
+  A4:
+  A5:
+  D0:
+  D1:
+  D2:
+  D3:
+  D4:
+  D5:
+  D6:
+  D7:
+  D8: RS pin from LCD
+  D9: E pin from LCD
+  D10: DB4 from LCD
+  D11: DB5 from LCD
+  D12: DB6 from LCD
+  D13: DB7 from LCD
+*/
+// Libraries included
+#include "hd44780.h"
+
+// Global variables
+volatile unsigned int result = 0;
+
+// Interrupt when ADC has a result
+ISR(ADC_vect) {
+  result = ADC;
+}
+
+void setup() {
+  // Setting up ADCSRA, ADCSRB and ADMUX
+  ADCSRA = 0xEF;
+  ADCSRB = 0x00;
+  ADMUX = 0x40;
+
+  // Initialize LCD screen
+  lcd_init();
+}
+
+void loop() {
+  // Local variables
+  const char n = 5;
+  int base = 10;
+  
+  // Clear LCD screen
+  lcd_clrscr();
+
+  // Display on LCD "Pot. Value"
+  lcd_puts("Pot. Value:");
+
+  // Go to line 2
+  lcd_goto(0x40);
+  
+  // Create an array that will store each ASCII character
+  char charBuffer[n];
+
+  // Converts value, in the given, into the variable charBuffer[]
+  itoa(result, charBuffer, base);
+
+  // Display result string
+  lcd_puts(charBuffer);
+  
+  _delay_ms(20);
+
+
+}

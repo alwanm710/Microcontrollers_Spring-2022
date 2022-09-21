@@ -1,0 +1,52 @@
+/*
+  Lab 7 Circuit 2
+  Servomotor Control
+  By: Jon and Mohammad
+  Written: 3/16/22
+  I/O Pins
+  A0: Pot input
+  A1:
+  A2:
+  A3:
+  A4:
+  A5:
+  D0:
+  D1:
+  D2:
+  D3:
+  D4:
+  D5: Servomotor output
+  D6:
+  D7:
+  D8:
+  D9:
+  D10: 
+  D11: 
+  D12: 
+  D13: 
+*/
+volatile unsigned int result = 0;
+//store ADC value in global variable
+ISR(ADC_vect){
+  result = ADC;
+}
+
+void setup() {
+  // put your setup code here, to run once:
+  cli();
+  DDRD = 0x20; //D5 as output
+  //initialize ADC on A0
+  ADCSRA = 0xEF;
+  ADCSRB = 0x00;
+  ADMUX = 0x40;
+  //initialize timer/counter with prescaler of 1024, phase-correct PWM, top value of 156
+  TCCR0A = 0x21;
+  TCCR0B = 0x0D;
+  OCR0A = 156;
+  sei();
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+OCR0B = 14L*result/1023 + 5; //EQ corresponding to Ton values for servomotor - OCR0B varies from 5 for 10 degrees, to 19 for 170 degrees
+}

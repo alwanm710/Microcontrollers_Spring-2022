@@ -1,0 +1,96 @@
+/*
+  Lab 9, Circuit 3 - PRIMARY
+  By: Jack, Cesar, Mohammed
+  Written: 4/6/22
+  Edited: 4/11/22
+  I/O Pins
+  A0: pin A on 7 seg
+  A1: pin B on 7 seg
+  A2: pin C on 7 seg
+  A3: pin d on 7 seg
+  A4:
+  A5:
+  D0:
+  D1:
+  D2: PushButton Input
+  D3: Red LED
+  D4: Green LED
+  D5: Blue LED
+  D6:
+  D7:
+  D8:
+  D9:
+  D10: 
+  D11: M0SI
+  D12: MISO
+  D13: Clock to secondary
+*/
+volatile unsigned char pNum, sNum = 0; //initialize primary and secondary random number
+
+void setup() {
+  //set random seed for random number
+  randomSeed(5);
+ 
+
+  cli();
+  
+  DDRD = 0x38;  // configure D3-D5 as outputs
+  DDRB = 0x2C;  // configure SCK and MOSI as output pins
+  DDRC = 0x0F;  // setting port c A0-A3 as outputs
+
+  //enable pushbutton interrupt on rising edge
+  EICRA = 0x03;
+  EIMSK = 0x01;
+
+
+  // Enable SPI, LSB first, primary mode, default prescaler
+  SPCR = 0x70;
+  
+  sei();
+}
+
+
+void loop() {
+  static unsigned char winLogic = 0;  //initializing winlogic variable to send to Secondary device
+  sNum = SPITxRx(winLogic);  //sending winLogic to secondary device and recieving value of secondary's random number
+
+  if(sNum > pNum) //sNum win condition
+  {
+    PORTD &= 0xC7;
+    winLogic = 1;
+    PORTD |= 0x08;
+  }
+  else if(sNum<pNum) //pNum win condition
+  {
+    PORTD &= 0xC7;
+    winLogic = 2;
+    PORTD |= 0x10;
+  }
+  else //tie condition
+  {
+    PORTD &= 0xC7;
+    winLogic = 3;
+    PORTD |= 0x20;
+  }
+  
+  
+ 
+
+}
+
+ISR(INT0_vect) //push button external interrupt
+{
+  pNum = random(1, 10); //generate random number
+  PORTC = ((PORTC &= 0x0F)= pNum); //output random number to 7-seg display  
+}
+
+unsigned char SPITxRx(unsigned char dataToWrite) { //function for sending and recieving data
+
+  // Data will transfer when SPDR is written to
+  SPDR = dataToWrite;
+
+  // Wait until transfer is complete
+  while (!(SPSR & (1 << 7)));
+  return SPDR; //return sNum value
+
+}

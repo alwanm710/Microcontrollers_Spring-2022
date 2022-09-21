@@ -1,0 +1,93 @@
+/*
+  Lab 6 Circuit 2
+  Time elapsed of button press
+  By: Jack, Gary, Mohammad
+  Written: 2/23/22
+  I/O Pins
+  A0: 
+  A1:
+  A2:
+  A3:
+  A4:
+  A5:
+  D0:
+  D1:
+  D2: Push Button
+  D3:
+  D4:
+  D5:
+  D6:
+  D7:
+  D8: RS line
+  D9: E line
+  D10: DB4
+  D11: DB5
+  D12: DB6
+  D13: DB7
+*/
+#include "hd44780.h"
+//declare global variables
+volatile unsigned long ticks = 0;
+volatile unsigned long tks[2] = {};
+volatile unsigned char x = 0;
+
+
+void setup() {
+  // put your setup code here, to run once:
+  //initialize ADC, LCD, external and Timer interrupts
+  cli();
+ 
+  lcd_init();
+
+ 
+  EICRA = 0x03;
+  EIMSK = 0x01;
+
+  TCCR2B = 0x06;
+  TIMSK2 = 0x01;
+
+
+  sei();
+}
+//add 256 to ticks when timer overflows
+ISR(TIMER2_OVF_vect)
+{
+  ticks += 256;
+}
+//store value of ticks when button is pressed
+ISR(INT0_vect)
+{
+  unsigned long curTicks = ticks + TCNT2;
+  tks[x] = curTicks;
+  x ^= 1;
+}
+
+
+void loop() {
+  unsigned long tksElapsed = 0;
+  //clear lcd
+  lcd_clrscr();
+  
+  //if statement to not allow a negative subtraction result
+  if (tks[1] < tks[0])
+  {
+    tksElapsed = tks[0] - tks[1];
+  }
+  else
+  {
+    tksElapsed = tks[1] - tks[0];
+  }
+  //calculate time elapsed from clock ticks in ms
+  unsigned long Time = (tksElapsed * 16L) / 1000;
+
+  //display time on LCD screen
+  char charButter[9];
+  lcd_puts("Time Elapsed: ");
+  lcd_goto(0x40);
+  itoa(Time, charButter, 10);
+  lcd_puts(charButter);
+  lcd_puts("ms");  
+
+  //delay for LCD screen
+  _delay_ms(5);
+}
